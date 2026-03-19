@@ -1,0 +1,38 @@
+name: localvision_box
+description: 本地 VLM 目标检测应用 - 通过自然语言提示词在图片上绘制边界框
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # 状态管理
+  flutter_riverpod: ^2.4.9
+  
+  # 网络请求
+  dio: ^5.4.0
+  
+  # 图片处理
+  image_picker: ^1.0.7
+  image: ^4.1.7
+  
+  # 持久化存储
+  shared_preferences: ^2.2.2
+  
+  # 权限处理 (Android/iOS)
+  permission_handler: ^11.3.0
+  
+  # UI 组件
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
