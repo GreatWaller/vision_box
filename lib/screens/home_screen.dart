@@ -51,18 +51,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await notifier.detectObjects(prompt);
   }
 
-  /// 清除结果
-  void clearResult() {
-    // 直接设置状态，确保触发 UI 更新
-    ref.invalidate(detectionProvider);
-    ref.read(detectionProvider.notifier).clearResult();
-    
-    // 清除提示词输入框
-    if (_promptController.text.isNotEmpty) {
-      _promptController.clear();
-    }
-  }
-
   /// 重置所有状态
   void resetAll() {
     ref.read(detectionProvider.notifier).reset();
@@ -353,15 +341,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     : const Icon(Icons.auto_awesome),
                 label: Text(state.isProcessing ? '检测中...' : '开始检测'),
               ),
-              
-              // 清除结果按钮
-              if (state.hasResult)
-                OutlinedButton.icon(
-                  onPressed: clearResult,
-                  icon: const Icon(Icons.clear),
-                  label: const Text('清除结果'),
-                ),
-              
+
               // 重置按钮
               if (state.hasImage || state.hasResult)
                 OutlinedButton.icon(
@@ -369,7 +349,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   icon: const Icon(Icons.refresh),
                   label: const Text('重置'),
                 ),
-              
+
               // 显示检测结果列表
               if (state.hasResult && state.result!.hasResults)
                 OutlinedButton.icon(
