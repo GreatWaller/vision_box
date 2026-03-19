@@ -53,11 +53,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   /// 清除结果
   void clearResult() {
-    final notifier = ref.read(detectionProvider.notifier);
-    notifier.clearResult();
+    // 直接设置状态，确保触发 UI 更新
+    ref.invalidate(detectionProvider);
+    ref.read(detectionProvider.notifier).clearResult();
     
     // 清除提示词输入框
-    _promptController.clear();
+    if (_promptController.text.isNotEmpty) {
+      _promptController.clear();
+    }
   }
 
   /// 重置所有状态

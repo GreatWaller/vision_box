@@ -225,8 +225,11 @@ class DetectionNotifier extends StateNotifier<DetectionStateData> {
 
   /// 清除当前结果 (保留图片)
   void clearResult() {
-    state = state.copyWith(
+    state = DetectionStateData(
       state: DetectionState.imageLoaded,
+      imageBytes: state.imageBytes,
+      originalWidth: state.originalWidth,
+      originalHeight: state.originalHeight,
       result: null,
       errorMessage: null,
       userPrompt: null,
