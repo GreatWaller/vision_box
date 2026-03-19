@@ -17,6 +17,7 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
   late TextEditingController _systemPromptController;
   late TextEditingController _modelOutputWidthController;
   late TextEditingController _modelOutputHeightController;
+  late TextEditingController _apiKeyController;
 
   bool _isTesting = false;
   bool? _testResult;
@@ -35,6 +36,7 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
     _modelOutputHeightController = TextEditingController(
       text: (config.modelOutputHeight ?? 1000).toString(),
     );
+    _apiKeyController = TextEditingController(text: config.apiKey ?? '');
   }
 
   @override
@@ -44,6 +46,7 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
     _systemPromptController.dispose();
     _modelOutputWidthController.dispose();
     _modelOutputHeightController.dispose();
+    _apiKeyController.dispose();
     super.dispose();
   }
 
@@ -115,12 +118,15 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
         modelOutputHeight = 1000;
       }
 
+      final apiKey = _apiKeyController.text.trim();
+
       final newConfig = AppConfig(
         baseUrl: baseUrl,
         modelName: modelName,
         systemPrompt: systemPrompt.isNotEmpty ? systemPrompt : AppConfig.defaultSystemPrompt,
         modelOutputWidth: modelOutputWidth,
         modelOutputHeight: modelOutputHeight,
+        apiKey: apiKey.isNotEmpty ? apiKey : null,
       );
 
       await ref.read(appConfigProvider.notifier).saveConfig(newConfig);
@@ -150,6 +156,7 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
       _systemPromptController.text = AppConfig.defaultSystemPrompt;
       _modelOutputWidthController.text = '1000';
       _modelOutputHeightController.text = '1000';
+      _apiKeyController.clear();
     });
   }
 
@@ -180,6 +187,11 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
 
             // 模型输出尺寸配置
             _buildModelOutputSizeField(),
+
+            const SizedBox(height: 16),
+
+            // API Key 配置
+            _buildApiKeyField(),
 
             const SizedBox(height: 16),
 
@@ -293,6 +305,22 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildApiKeyField() {
+    return TextField(
+      controller: _apiKeyController,
+      decoration: InputDecoration(
+        labelText: 'API Key (可选)',
+        hintText: '输入 API Key（如果需要认证）',
+        prefixIcon: const Icon(Icons.vpn_key),
+        helperText: '某些 LM Studio 服务或云端 API 需要认证',
+        border: const OutlineInputBorder(),
+      ),
+      obscureText: true,
+      autocorrect: false,
+      textInputAction: TextInputAction.next,
     );
   }
 

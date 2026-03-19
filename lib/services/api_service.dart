@@ -71,6 +71,7 @@ class ApiService {
   /// [imageHeight] 图片高度（实际显示的图片高度）
   /// [modelOutputWidth] 模型输出宽度（某些模型如 Qwen2.5-VL 使用固定尺寸如 1000）
   /// [modelOutputHeight] 模型输出高度（某些模型使用固定尺寸如 1000）
+  /// [apiKey] API Key（可选，用于认证）
   ///
   /// 返回：DetectionResult 检测结果
   Future<DetectionResult> detectObjects({
@@ -84,6 +85,7 @@ class ApiService {
     required double imageHeight,
     double? modelOutputWidth,
     double? modelOutputHeight,
+    String? apiKey,
   }) async {
     final stopwatch = Stopwatch()..start();
 
@@ -122,13 +124,21 @@ class ApiService {
     };
 
     try {
+      // 构建请求头
+      final headers = <String, dynamic>{
+        'Content-Type': 'application/json',
+      };
+      
+      // 如果提供了 API Key，添加认证头
+      if (apiKey != null && apiKey.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $apiKey';
+      }
+
       final response = await _dio.post(
         '$baseUrl/chat/completions',
         data: requestBody,
         options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: headers,
         ),
       );
 

@@ -17,12 +17,16 @@ class AppConfig {
   final double? modelOutputWidth;
   final double? modelOutputHeight;
 
+  /// API Key（可选，某些服务需要认证）
+  final String? apiKey;
+
   const AppConfig({
     this.baseUrl = 'http://localhost:1234/v1',
     this.modelName = 'qwen3.5-0.8B',
     this.systemPrompt = defaultSystemPrompt,
     this.modelOutputWidth = 1000,
     this.modelOutputHeight = 1000,
+    this.apiKey,
   });
 
   /// 默认系统提示词 - 强制 JSON 输出
@@ -43,6 +47,7 @@ Constraints:
     String? systemPrompt,
     double? modelOutputWidth,
     double? modelOutputHeight,
+    String? apiKey,
   }) {
     return AppConfig(
       baseUrl: baseUrl ?? this.baseUrl,
@@ -50,6 +55,7 @@ Constraints:
       systemPrompt: systemPrompt ?? this.systemPrompt,
       modelOutputWidth: modelOutputWidth ?? this.modelOutputWidth,
       modelOutputHeight: modelOutputHeight ?? this.modelOutputHeight,
+      apiKey: apiKey ?? this.apiKey,
     );
   }
 
@@ -61,6 +67,7 @@ Constraints:
       systemPrompt: json['systemPrompt'] as String? ?? defaultSystemPrompt,
       modelOutputWidth: json['modelOutputWidth'] as double?,
       modelOutputHeight: json['modelOutputHeight'] as double?,
+      apiKey: json['apiKey'] as String?,
     );
   }
 
@@ -72,6 +79,7 @@ Constraints:
       'systemPrompt': systemPrompt,
       if (modelOutputWidth != null) 'modelOutputWidth': modelOutputWidth,
       if (modelOutputHeight != null) 'modelOutputHeight': modelOutputHeight,
+      if (apiKey != null) 'apiKey': apiKey,
     };
   }
 

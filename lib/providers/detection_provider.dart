@@ -190,6 +190,7 @@ class DetectionNotifier extends StateNotifier<DetectionStateData> {
         imageHeight: processedHeight,
         modelOutputWidth: config.modelOutputWidth,
         modelOutputHeight: config.modelOutputHeight,
+        apiKey: config.apiKey,
       );
 
       // 更新进度
