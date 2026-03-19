@@ -208,8 +208,6 @@ class _ImageCanvasState extends State<ImageCanvas> {
                       originalWidth: widget.originalWidth,
                       originalHeight: widget.originalHeight,
                       canvasSize: canvasSize,
-                      imageDisplayRect: _calculateImageDisplayRect(),
-                      imageSize: _getImageSize(),
                       transformationController: _transformationController,
                       selectedIndex: _selectedIndex,
                       onBoxTap: (index) {

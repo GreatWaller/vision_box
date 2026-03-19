@@ -16,12 +16,6 @@ class BoundingBoxPainter extends CustomPainter {
   /// 当前显示区域尺寸 (Canvas 大小)
   final Size canvasSize;
 
-  /// 图片在 Canvas 中的实际显示区域（相对于 Canvas，包含变换）
-  final Rect? imageDisplayRect;
-
-  /// 图片的实际显示尺寸（未应用变换，仅 BoxFit.contain 后的尺寸）
-  final Size? imageSize;
-
   /// 变换控制器 - 获取 InteractiveViewer 的缩放和平移信息
   final TransformationController? transformationController;
 
@@ -42,8 +36,6 @@ class BoundingBoxPainter extends CustomPainter {
     required this.originalWidth,
     required this.originalHeight,
     required this.canvasSize,
-    this.imageDisplayRect,
-    this.imageSize,
     this.transformationController,
     this.selectedIndex,
     this.onBoxTap,
@@ -61,34 +53,28 @@ class BoundingBoxPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (boxes.isEmpty) return;
 
-    // 使用传入的图片显示区域（包含变换）
-    final displayRect = imageDisplayRect;
-    if (displayRect == null || displayRect.isEmpty) return;
+    // 计算图片在 Canvas 中的实际显示区域（考虑 BoxFit.contain）
+    final imageRect = _calculateImageRect();
+    if (imageRect.isEmpty) return;
 
-    // 使用传入的图片实际尺寸，如果为空则计算默认尺寸
-    final size = imageSize ?? _calculateDefaultImageSize();
-
-    // 计算图片在 Canvas 中的初始位置（无变换时）
-    final initialRect = _calculateInitialImageRect(size);
-
-    // 计算变换矩阵
+    // 获取变换矩阵
     final matrix = transformationController?.value;
-    
-    // 如果有变换，应用变换到初始区域
-    final finalRect = (matrix != null) 
-        ? _applyTransform(initialRect, matrix)
-        : initialRect;
+
+    // 如果有变换，应用变换到图片区域
+    final finalImageRect = (matrix != null)
+        ? _applyTransform(imageRect, matrix)
+        : imageRect;
 
     // 为每个边界框绘制
     for (int i = 0; i < boxes.length; i++) {
-      _drawBoundingBox(canvas, boxes[i], i, finalRect, size);
+      _drawBoundingBox(canvas, boxes[i], i, finalImageRect);
     }
   }
 
-  /// 计算默认图片尺寸（BoxFit.contain）
-  Size _calculateDefaultImageSize() {
-    if (originalWidth == 0 || originalHeight == 0) {
-      return Size.zero;
+  /// 计算图片在 Canvas 中的显示区域（BoxFit.contain）
+  Rect _calculateImageRect() {
+    if (originalWidth <= 0 || originalHeight <= 0) {
+      return Rect.zero;
     }
 
     // 计算 BoxFit.contain 的缩放比例
@@ -96,14 +82,14 @@ class BoundingBoxPainter extends CustomPainter {
     final scaleY = canvasSize.height / originalHeight;
     final scale = scaleX < scaleY ? scaleX : scaleY;
 
-    return Size(originalWidth * scale, originalHeight * scale);
-  }
+    final scaledWidth = originalWidth * scale;
+    final scaledHeight = originalHeight * scale;
 
-  /// 计算初始图片显示区域（无变换时，居中显示）
-  Rect _calculateInitialImageRect(Size size) {
-    final offsetX = (canvasSize.width - size.width) / 2;
-    final offsetY = (canvasSize.height - size.height) / 2;
-    return Rect.fromLTWH(offsetX, offsetY, size.width, size.height);
+    // 居中放置
+    final offsetX = (canvasSize.width - scaledWidth) / 2;
+    final offsetY = (canvasSize.height - scaledHeight) / 2;
+
+    return Rect.fromLTWH(offsetX, offsetY, scaledWidth, scaledHeight);
   }
 
   /// 应用变换到矩形
