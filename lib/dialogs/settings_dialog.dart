@@ -63,13 +63,14 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
       final success = await apiService.testConnection(
         _baseUrlController.text.trim(),
         _modelNameController.text.trim(),
+        _apiKeyController.text.trim(),
       );
 
       setState(() {
         _isTesting = false;
         _testResult = success;
-        _testMessage = success 
-            ? '连接成功！API 服务正常运行。' 
+        _testMessage = success
+            ? '连接成功！API 服务正常运行。'
             : '连接失败。请检查 API 服务是否启动，URL 是否正确。';
       });
     } catch (e) {

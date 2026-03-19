@@ -34,10 +34,21 @@ class ApiService {
   ///
   /// [baseUrl] API 基础 URL
   /// [modelName] 模型名称
+  /// [apiKey] API Key（可选，用于认证）
   ///
   /// 返回：true 表示连接成功
-  Future<bool> testConnection(String baseUrl, String modelName) async {
+  Future<bool> testConnection(String baseUrl, String modelName, String? apiKey) async {
     try {
+      // 构建请求头
+      final headers = <String, dynamic>{
+        'Content-Type': 'application/json',
+      };
+      
+      // 如果提供了 API Key，添加认证头
+      if (apiKey != null && apiKey.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $apiKey';
+      }
+
       final response = await _dio.post(
         '$baseUrl/chat/completions',
         data: {
@@ -48,9 +59,7 @@ class ApiService {
           'max_tokens': 100,
         },
         options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: headers,
         ),
       );
       return response.statusCode == 200;
