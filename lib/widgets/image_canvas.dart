@@ -41,12 +41,9 @@ class ImageCanvas extends StatefulWidget {
 class _ImageCanvasState extends State<ImageCanvas> {
   /// 变换控制器 - 监听 InteractiveViewer 的缩放和平移
   late final TransformationController _transformationController;
-  
+
   /// 选中的边界框索引
   int? _selectedIndex;
-  
-  /// 图片 Global Key - 用于获取图片实际渲染尺寸
-  final _imageKey = GlobalKey();
 
   @override
   void initState() {
@@ -72,39 +69,6 @@ class _ImageCanvasState extends State<ImageCanvas> {
     });
   }
 
-  /// 获取图片在 Stack 中的显示区域
-  /// 
-  /// 返回：Rect 图片显示区域（相对于 Stack）
-  Rect? _getImageDisplayRect() {
-    final context = _imageKey.currentContext;
-    if (context == null) return null;
-    
-    final box = context.findRenderObject() as RenderBox?;
-    if (box == null) return null;
-    
-    // 获取图片在 Stack 中的位置和尺寸
-    final position = box.localToGlobal(Offset.zero);
-    return Rect.fromLTWH(
-      position.dx,
-      position.dy,
-      box.size.width,
-      box.size.height,
-    );
-  }
-
-  /// 获取图片的实际显示尺寸
-  /// 
-  /// 返回：Size 图片尺寸
-  Size? _getImageSize() {
-    final context = _imageKey.currentContext;
-    if (context == null) return null;
-    
-    final box = context.findRenderObject() as RenderBox?;
-    if (box == null) return null;
-    
-    return box.size;
-  }
-
   /// 处理画布点击
   void _handleTap(TapDownDetails details, Size canvasSize) {
     if (widget.boxes.isEmpty) {
@@ -112,13 +76,13 @@ class _ImageCanvasState extends State<ImageCanvas> {
       return;
     }
 
-    // 获取图片显示区域
-    final imageDisplayRect = _calculateImageDisplayRect();
-    if (imageDisplayRect == null) return;
+    // 计算图片显示区域（使用与 BoundingBoxPainter 相同的逻辑）
+    final imageDisplayRect = _calculateImageRect(canvasSize);
+    if (imageDisplayRect.isEmpty) return;
 
     // 获取点击位置（相对于 Stack）
     final tapPosition = details.localPosition;
-    
+
     // 检查点击是否在图片区域内
     if (!imageDisplayRect.contains(tapPosition)) {
       setState(() => _selectedIndex = null);
@@ -128,7 +92,7 @@ class _ImageCanvasState extends State<ImageCanvas> {
     // 将点击位置转换为归一化坐标
     final normX = (tapPosition.dx - imageDisplayRect.left) / imageDisplayRect.width;
     final normY = (tapPosition.dy - imageDisplayRect.top) / imageDisplayRect.height;
-    
+
     // 检测命中
     int? hitIndex;
     for (int i = 0; i < widget.boxes.length; i++) {
@@ -148,11 +112,27 @@ class _ImageCanvasState extends State<ImageCanvas> {
     }
   }
 
-  /// 计算图片显示区域
+  /// 计算图片显示区域（BoxFit.contain）
   ///
-  /// 使用 GlobalKey 获取图片实际渲染尺寸
-  Rect? _calculateImageDisplayRect() {
-    return _getImageDisplayRect();
+  /// 返回：Rect 图片显示区域（相对于 Stack）
+  Rect _calculateImageRect(Size canvasSize) {
+    if (widget.originalWidth <= 0 || widget.originalHeight <= 0) {
+      return Rect.zero;
+    }
+
+    // 计算 BoxFit.contain 的缩放比例
+    final scaleX = canvasSize.width / widget.originalWidth;
+    final scaleY = canvasSize.height / widget.originalHeight;
+    final scale = scaleX < scaleY ? scaleX : scaleY;
+
+    final scaledWidth = widget.originalWidth * scale;
+    final scaledHeight = widget.originalHeight * scale;
+
+    // 居中放置
+    final offsetX = (canvasSize.width - scaledWidth) / 2;
+    final offsetY = (canvasSize.height - scaledHeight) / 2;
+
+    return Rect.fromLTWH(offsetX, offsetY, scaledWidth, scaledHeight);
   }
 
   @override
@@ -173,7 +153,6 @@ class _ImageCanvasState extends State<ImageCanvas> {
                 // 底层：图片显示
                 Image.memory(
                   widget.imageBytes,
-                  key: _imageKey,
                   fit: BoxFit.contain,
                   width: widget.originalWidth,
                   height: widget.originalHeight,

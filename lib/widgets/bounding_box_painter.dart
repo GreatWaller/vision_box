@@ -113,11 +113,11 @@ class BoundingBoxPainter extends CustomPainter {
   Offset _transformPoint(Offset point, Matrix4 matrix) {
     final x = point.dx;
     final y = point.dy;
-    
+
     // Matrix4 变换：x' = m[0]*x + m[4]*y + m[12]*z + m[3]
-    final transformedX = matrix.storage[0] * x + matrix.storage[4] * y + matrix.storage[3];
-    final transformedY = matrix.storage[1] * x + matrix.storage[5] * y + matrix.storage[7];
-    
+    final transformedX = matrix.storage[0] * x + matrix.storage[4] * y + matrix.storage[12];
+    final transformedY = matrix.storage[1] * x + matrix.storage[5] * y + matrix.storage[13];
+
     return Offset(transformedX, transformedY);
   }
 
@@ -127,10 +127,9 @@ class BoundingBoxPainter extends CustomPainter {
     BoundingBox box,
     int index,
     Rect imageDisplayRect,
-    Size imageSize,
   ) {
     // 计算边界框在画布上的屏幕坐标
-    final screenRect = _calculateScreenRect(box, imageDisplayRect, imageSize);
+    final screenRect = _calculateScreenRect(box, imageDisplayRect);
 
     // 如果矩形无效，跳过
     if (screenRect.isEmpty || screenRect.width < 1 || screenRect.height < 1) {
@@ -154,15 +153,13 @@ class BoundingBoxPainter extends CustomPainter {
   ///
   /// [box] 边界框数据（归一化坐标）
   /// [imageDisplayRect] 图片在画布上的显示区域（包含变换）
-  /// [imageSize] 图片的实际显示尺寸（BoxFit.contain 后的尺寸）
-  Rect _calculateScreenRect(BoundingBox box, Rect imageDisplayRect, Size imageSize) {
-    // 使用归一化坐标映射到图片实际显示尺寸
-    // 然后偏移到 imageDisplayRect 的位置
+  Rect _calculateScreenRect(BoundingBox box, Rect imageDisplayRect) {
+    // 使用归一化坐标直接映射到图片显示区域
     return Rect.fromLTWH(
-      imageDisplayRect.left + box.xMinNorm * imageSize.width,
-      imageDisplayRect.top + box.yMinNorm * imageSize.height,
-      (box.xMaxNorm - box.xMinNorm) * imageSize.width,
-      (box.yMaxNorm - box.yMinNorm) * imageSize.height,
+      imageDisplayRect.left + box.xMinNorm * imageDisplayRect.width,
+      imageDisplayRect.top + box.yMinNorm * imageDisplayRect.height,
+      (box.xMaxNorm - box.xMinNorm) * imageDisplayRect.width,
+      (box.yMaxNorm - box.yMinNorm) * imageDisplayRect.height,
     );
   }
 
@@ -315,9 +312,7 @@ class BoundingBoxPainter extends CustomPainter {
     // 当任何绘制参数变化时重绘
     return oldDelegate.boxes != boxes ||
         oldDelegate.selectedIndex != selectedIndex ||
-        oldDelegate.canvasSize != canvasSize ||
-        oldDelegate.imageDisplayRect != imageDisplayRect ||
-        oldDelegate.imageSize != imageSize;
+        oldDelegate.canvasSize != canvasSize;
   }
 
   /// 检测点击是否命中某个边界框
