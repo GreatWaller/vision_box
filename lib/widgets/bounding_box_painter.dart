@@ -4,20 +4,13 @@ import '../models/bounding_box.dart';
 /// 边界框绘制器 - 核心可视化组件
 ///
 /// 使用 CustomPainter 在图片上绘制边界框
-/// 关键：正确处理 InteractiveViewer 的变换矩阵，确保缩放/拖拽时边界框跟随图像
+/// Canvas 尺寸已经是图片的显示区域，直接将归一化坐标映射到 Canvas
 class BoundingBoxPainter extends CustomPainter {
   /// 边界框列表
   final List<BoundingBox> boxes;
 
-  /// 原始图片尺寸（用于归一化坐标转换）
-  final double originalWidth;
-  final double originalHeight;
-
-  /// 当前显示区域尺寸 (Canvas 大小)
+  /// 当前显示区域尺寸 (Canvas 大小，等于图片显示区域)
   final Size canvasSize;
-
-  /// 变换控制器 - 获取 InteractiveViewer 的缩放和平移信息
-  final TransformationController? transformationController;
 
   /// 选中的边界框索引 (用于高亮)
   final int? selectedIndex;
@@ -33,10 +26,7 @@ class BoundingBoxPainter extends CustomPainter {
 
   BoundingBoxPainter({
     required this.boxes,
-    required this.originalWidth,
-    required this.originalHeight,
     required this.canvasSize,
-    this.transformationController,
     this.selectedIndex,
     this.onBoxTap,
     this.boxColor = Colors.cyan,
@@ -53,89 +43,23 @@ class BoundingBoxPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (boxes.isEmpty) return;
 
-    // 计算图片在 Canvas 中的实际显示区域（考虑 BoxFit.contain）
-    final imageRect = _calculateImageRect();
-    if (imageRect.isEmpty) return;
-
-    // 获取变换矩阵
-    final matrix = transformationController?.value;
-
-    // 如果有变换，应用变换到图片区域
-    final finalImageRect =
-        (matrix != null) ? _applyTransform(imageRect, matrix) : imageRect;
-
-    // 为每个边界框绘制
+    // 现在 canvasSize 就是图片的显示区域
+    // 直接将归一化坐标映射到 canvas
     for (int i = 0; i < boxes.length; i++) {
-      _drawBoundingBox(canvas, boxes[i], i, finalImageRect);
+      _drawBox(canvas, boxes[i], i);
     }
-  }
-
-  /// 计算图片在 Canvas 中的显示区域（BoxFit.contain）
-  Rect _calculateImageRect() {
-    if (originalWidth <= 0 || originalHeight <= 0) {
-      return Rect.zero;
-    }
-
-    // 计算 BoxFit.contain 的缩放比例
-    final scaleX = canvasSize.width / originalWidth;
-    final scaleY = canvasSize.height / originalHeight;
-    final scale = scaleX < scaleY ? scaleX : scaleY;
-
-    final scaledWidth = originalWidth * scale;
-    final scaledHeight = originalHeight * scale;
-
-    // 居中放置
-    final offsetX = (canvasSize.width - scaledWidth) / 2;
-    final offsetY = (canvasSize.height - scaledHeight) / 2;
-
-    return Rect.fromLTWH(offsetX, offsetY, scaledWidth, scaledHeight);
-  }
-
-  /// 应用变换到矩形
-  Rect _applyTransform(Rect rect, Matrix4 matrix) {
-    // 变换四个角点
-    final topLeft = _transformPoint(Offset(rect.left, rect.top), matrix);
-    final topRight = _transformPoint(Offset(rect.right, rect.top), matrix);
-    final bottomLeft = _transformPoint(Offset(rect.left, rect.bottom), matrix);
-    final bottomRight =
-        _transformPoint(Offset(rect.right, rect.bottom), matrix);
-
-    // 创建外接矩形 - 使用所有四个点计算最小/最大值
-    final minX = [topLeft.dx, topRight.dx, bottomLeft.dx, bottomRight.dx]
-        .reduce((a, b) => a < b ? a : b);
-    final maxX = [topLeft.dx, topRight.dx, bottomLeft.dx, bottomRight.dx]
-        .reduce((a, b) => a > b ? a : b);
-    final minY = [topLeft.dy, topRight.dy, bottomLeft.dy, bottomRight.dy]
-        .reduce((a, b) => a < b ? a : b);
-    final maxY = [topLeft.dy, topRight.dy, bottomLeft.dy, bottomRight.dy]
-        .reduce((a, b) => a > b ? a : b);
-
-    return Rect.fromLTWH(minX, minY, maxX - minX, maxY - minY);
-  }
-
-  /// 变换点坐标
-  Offset _transformPoint(Offset point, Matrix4 matrix) {
-    final x = point.dx;
-    final y = point.dy;
-
-    // Matrix4 变换：x' = m[0]*x + m[4]*y + m[12]*z + m[3]
-    final transformedX =
-        matrix.storage[0] * x + matrix.storage[4] * y + matrix.storage[12];
-    final transformedY =
-        matrix.storage[1] * x + matrix.storage[5] * y + matrix.storage[13];
-
-    return Offset(transformedX, transformedY);
   }
 
   /// 绘制单个边界框
-  void _drawBoundingBox(
-    Canvas canvas,
-    BoundingBox box,
-    int index,
-    Rect imageDisplayRect,
-  ) {
+  void _drawBox(Canvas canvas, BoundingBox box, int index) {
     // 计算边界框在画布上的屏幕坐标
-    final screenRect = _calculateScreenRect(box, imageDisplayRect);
+    // 现在 canvasSize 就是图片显示区域，所以直接映射
+    final screenRect = Rect.fromLTWH(
+      box.xMinNorm * canvasSize.width,
+      box.yMinNorm * canvasSize.height,
+      (box.xMaxNorm - box.xMinNorm) * canvasSize.width,
+      (box.yMaxNorm - box.yMinNorm) * canvasSize.height,
+    );
 
     // 如果矩形无效，跳过
     if (screenRect.isEmpty || screenRect.width < 1 || screenRect.height < 1) {
@@ -153,20 +77,6 @@ class BoundingBoxPainter extends CustomPainter {
 
     // 绘制标签文本
     _drawLabelText(canvas, screenRect, box);
-  }
-
-  /// 计算边界框的屏幕坐标矩形
-  ///
-  /// [box] 边界框数据（归一化坐标）
-  /// [imageDisplayRect] 图片在画布上的显示区域（包含变换）
-  Rect _calculateScreenRect(BoundingBox box, Rect imageDisplayRect) {
-    // 使用归一化坐标直接映射到图片显示区域
-    return Rect.fromLTWH(
-      imageDisplayRect.left + box.xMinNorm * imageDisplayRect.width,
-      imageDisplayRect.top + box.yMinNorm * imageDisplayRect.height,
-      (box.xMaxNorm - box.xMinNorm) * imageDisplayRect.width,
-      (box.yMaxNorm - box.yMinNorm) * imageDisplayRect.height,
-    );
   }
 
   /// 绘制边框

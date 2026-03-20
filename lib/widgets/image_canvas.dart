@@ -83,15 +83,22 @@ class _ImageCanvasState extends State<ImageCanvas> {
     // 获取点击位置（相对于 Stack）
     final tapPosition = details.localPosition;
 
+    // 获取变换矩阵
+    final matrix = _transformationController.value;
+
+    // 将点击位置转换到 InteractiveViewer 的局部坐标系
+    // 需要应用变换矩阵的逆变换
+    final localPosition = _transformPoint(tapPosition, matrix);
+
     // 检查点击是否在图片区域内
-    if (!imageDisplayRect.contains(tapPosition)) {
+    if (!imageDisplayRect.contains(localPosition)) {
       setState(() => _selectedIndex = null);
       return;
     }
 
-    // 将点击位置转换为归一化坐标
-    final normX = (tapPosition.dx - imageDisplayRect.left) / imageDisplayRect.width;
-    final normY = (tapPosition.dy - imageDisplayRect.top) / imageDisplayRect.height;
+    // 将点击位置转换为归一化坐标（相对于图片显示区域）
+    final normX = (localPosition.dx - imageDisplayRect.left) / imageDisplayRect.width;
+    final normY = (localPosition.dy - imageDisplayRect.top) / imageDisplayRect.height;
 
     // 检测命中
     int? hitIndex;
@@ -110,6 +117,24 @@ class _ImageCanvasState extends State<ImageCanvas> {
     if (hitIndex != null && widget.onBoxTap != null) {
       widget.onBoxTap!(widget.boxes[hitIndex]);
     }
+  }
+
+  /// 将点从屏幕坐标转换到局部坐标（应用变换矩阵的逆）
+  Offset _transformPoint(Offset point, Matrix4 matrix) {
+    // 计算逆矩阵
+    final inverse = Matrix4.tryInvert(matrix);
+    if (inverse == null) return point;
+
+    final x = point.dx;
+    final y = point.dy;
+
+    // 应用逆变换
+    final transformedX =
+        inverse.storage[0] * x + inverse.storage[4] * y + inverse.storage[12];
+    final transformedY =
+        inverse.storage[1] * x + inverse.storage[5] * y + inverse.storage[13];
+
+    return Offset(transformedX, transformedY);
   }
 
   /// 计算图片显示区域（BoxFit.contain）
@@ -140,7 +165,10 @@ class _ImageCanvasState extends State<ImageCanvas> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
-        
+
+        // 计算图片的显示区域（BoxFit.contain）
+        final imageDisplayRect = _calculateImageRect(canvasSize);
+
         return GestureDetector(
           onTapDown: (details) => _handleTap(details, canvasSize),
           child: InteractiveViewer(
@@ -148,55 +176,62 @@ class _ImageCanvasState extends State<ImageCanvas> {
             minScale: 0.1,
             maxScale: 10.0,
             boundaryMargin: const EdgeInsets.all(100),
-            child: Stack(
-              children: [
-                // 底层：图片显示
-                Image.memory(
-                  widget.imageBytes,
-                  fit: BoxFit.contain,
-                  width: widget.originalWidth,
-                  height: widget.originalHeight,
-                  gaplessPlayback: true,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.broken_image,
-                            size: 64,
-                            color: Colors.grey.shade400,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '图片加载失败',
-                            style: TextStyle(color: Colors.grey.shade600),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                
-                // 顶层：边界框绘制
-                if (widget.boxes.isNotEmpty)
-                  CustomPaint(
-                    size: canvasSize,
-                    painter: BoundingBoxPainter(
-                      boxes: widget.boxes,
-                      originalWidth: widget.originalWidth,
-                      originalHeight: widget.originalHeight,
-                      canvasSize: canvasSize,
-                      transformationController: _transformationController,
-                      selectedIndex: _selectedIndex,
-                      onBoxTap: (index) {
-                        setState(() {
-                          _selectedIndex = index;
-                        });
-                      },
-                    ),
+            child: SizedBox(
+              width: canvasSize.width,
+              height: canvasSize.height,
+              child: Stack(
+                children: [
+                  // 底层：图片显示
+                  Image.memory(
+                    widget.imageBytes,
+                    fit: BoxFit.contain,
+                    width: widget.originalWidth,
+                    height: widget.originalHeight,
+                    gaplessPlayback: true,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.broken_image,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              '图片加载失败',
+                              style: TextStyle(color: Colors.grey.shade600),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-              ],
+
+                  // 顶层：边界框绘制 - 使用图片的实际显示区域
+                  if (widget.boxes.isNotEmpty && !imageDisplayRect.isEmpty)
+                    Positioned(
+                      left: imageDisplayRect.left,
+                      top: imageDisplayRect.top,
+                      width: imageDisplayRect.width,
+                      height: imageDisplayRect.height,
+                      child: CustomPaint(
+                        size: Size(imageDisplayRect.width, imageDisplayRect.height),
+                        painter: BoundingBoxPainter(
+                          boxes: widget.boxes,
+                          canvasSize: Size(imageDisplayRect.width, imageDisplayRect.height),
+                          selectedIndex: _selectedIndex,
+                          onBoxTap: (index) {
+                            setState(() {
+                              _selectedIndex = index;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         );
