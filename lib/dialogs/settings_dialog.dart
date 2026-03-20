@@ -69,9 +69,8 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
       setState(() {
         _isTesting = false;
         _testResult = success;
-        _testMessage = success
-            ? '连接成功！API 服务正常运行。'
-            : '连接失败。请检查 API 服务是否启动，URL 是否正确。';
+        _testMessage =
+            success ? '连接成功！API 服务正常运行。' : '连接失败。请检查 API 服务是否启动，URL 是否正确。';
       });
     } catch (e) {
       setState(() {
@@ -102,17 +101,17 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
       // 解析模型输出尺寸
       double? modelOutputWidth;
       double? modelOutputHeight;
-      
+
       final widthStr = _modelOutputWidthController.text.trim();
       final heightStr = _modelOutputHeightController.text.trim();
-      
+
       // 如果输入为空或无效，使用默认值 1000
       if (widthStr.isNotEmpty) {
         modelOutputWidth = double.tryParse(widthStr) ?? 1000;
       } else {
         modelOutputWidth = 1000;
       }
-      
+
       if (heightStr.isNotEmpty) {
         modelOutputHeight = double.tryParse(heightStr) ?? 1000;
       } else {
@@ -124,7 +123,9 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
       final newConfig = AppConfig(
         baseUrl: baseUrl,
         modelName: modelName,
-        systemPrompt: systemPrompt.isNotEmpty ? systemPrompt : AppConfig.defaultSystemPrompt,
+        systemPrompt: systemPrompt.isNotEmpty
+            ? systemPrompt
+            : AppConfig.defaultSystemPrompt,
         modelOutputWidth: modelOutputWidth,
         modelOutputHeight: modelOutputHeight,
         apiKey: apiKey.isNotEmpty ? apiKey : null,
@@ -178,9 +179,9 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
           children: [
             // Base URL 配置
             _buildUrlField(),
-            
+
             const SizedBox(height: 16),
-            
+
             // 模型名称配置
             _buildModelField(),
 
@@ -198,9 +199,9 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
 
             // 连接测试按钮
             _buildTestButton(),
-            
+
             const SizedBox(height: 24),
-            
+
             // 系统提示词配置 (可折叠)
             _buildSystemPromptSection(),
           ],
@@ -212,13 +213,13 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
           onPressed: resetToDefaults,
           child: const Text('重置为默认'),
         ),
-        
+
         // 取消按钮
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
           child: const Text('取消'),
         ),
-        
+
         // 保存按钮
         FilledButton(
           onPressed: saveConfig,
@@ -231,12 +232,12 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
   Widget _buildUrlField() {
     return TextField(
       controller: _baseUrlController,
-      decoration: InputDecoration(
+      decoration: const InputDecoration(
         labelText: 'Base URL',
         hintText: 'http://localhost:1234/v1',
-        prefixIcon: const Icon(Icons.link),
+        prefixIcon: Icon(Icons.link),
         helperText: '本地 VLM 服务的 API 地址',
-        border: const OutlineInputBorder(),
+        border: OutlineInputBorder(),
       ),
       autocorrect: false,
       textInputAction: TextInputAction.next,
@@ -246,12 +247,12 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
   Widget _buildModelField() {
     return TextField(
       controller: _modelNameController,
-      decoration: InputDecoration(
+      decoration: const InputDecoration(
         labelText: '模型名称',
         hintText: 'qwen3.5-0.8B',
-        prefixIcon: const Icon(Icons.model_training),
+        prefixIcon: Icon(Icons.model_training),
         helperText: '如：qwen3.5-0.8B, Qwen2.5-VL-7B, llava-v1.6-34b',
-        border: const OutlineInputBorder(),
+        border: OutlineInputBorder(),
       ),
       autocorrect: false,
       textInputAction: TextInputAction.next,
@@ -283,10 +284,10 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
             Expanded(
               child: TextField(
                 controller: _modelOutputWidthController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: '输出宽度',
                   hintText: '1000',
-                  border: const OutlineInputBorder(),
+                  border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -295,10 +296,10 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
             Expanded(
               child: TextField(
                 controller: _modelOutputHeightController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: '输出高度',
                   hintText: '1000',
-                  border: const OutlineInputBorder(),
+                  border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -312,12 +313,12 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
   Widget _buildApiKeyField() {
     return TextField(
       controller: _apiKeyController,
-      decoration: InputDecoration(
+      decoration: const InputDecoration(
         labelText: 'API Key (可选)',
         hintText: '输入 API Key（如果需要认证）',
-        prefixIcon: const Icon(Icons.vpn_key),
+        prefixIcon: Icon(Icons.vpn_key),
         helperText: '某些 LM Studio 服务或云端 API 需要认证',
-        border: const OutlineInputBorder(),
+        border: OutlineInputBorder(),
       ),
       obscureText: true,
       autocorrect: false,
@@ -331,7 +332,7 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
       children: [
         OutlinedButton.icon(
           onPressed: _isTesting ? null : testConnection,
-          icon: _isTesting 
+          icon: _isTesting
               ? const SizedBox(
                   width: 16,
                   height: 16,
@@ -340,31 +341,24 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
               : const Icon(Icons.wifi_find),
           label: Text(_isTesting ? '测试中...' : '测试连接'),
         ),
-        
         if (_testMessage != null) ...[
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: _testResult == true 
+              color: _testResult == true
                   ? Colors.green.withOpacity(0.1)
                   : Colors.red.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: _testResult == true 
-                    ? Colors.green 
-                    : Colors.red,
+                color: _testResult == true ? Colors.green : Colors.red,
               ),
             ),
             child: Row(
               children: [
                 Icon(
-                  _testResult == true 
-                      ? Icons.check_circle 
-                      : Icons.error,
-                  color: _testResult == true 
-                      ? Colors.green 
-                      : Colors.red,
+                  _testResult == true ? Icons.check_circle : Icons.error,
+                  color: _testResult == true ? Colors.green : Colors.red,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -372,8 +366,8 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
                   child: Text(
                     _testMessage!,
                     style: TextStyle(
-                      color: _testResult == true 
-                          ? Colors.green.shade800 
+                      color: _testResult == true
+                          ? Colors.green.shade800
                           : Colors.red.shade800,
                       fontSize: 13,
                     ),
@@ -411,10 +405,10 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
           height: 150,
           child: TextField(
             controller: _systemPromptController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: '系统提示词模板...',
-              border: const OutlineInputBorder(),
-              contentPadding: const EdgeInsets.all(12),
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.all(12),
             ),
             maxLines: null,
             expands: true,

@@ -88,22 +88,20 @@ class ImageService {
     if (xFile.mimeType != null && xFile.mimeType!.isNotEmpty) {
       return xFile.mimeType!;
     }
-    
+
     // 备用：从路径推断
     final path = xFile.path;
-    if (path != null) {
-      final extension = path.split('.').last.toLowerCase();
-      switch (extension) {
-        case 'jpg':
-        case 'jpeg':
-          return 'image/jpeg';
-        case 'png':
-          return 'image/png';
-        case 'gif':
-          return 'image/gif';
-        case 'webp':
-          return 'image/webp';
-      }
+    final extension = path.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
     }
     return 'image/jpeg'; // 默认
   }
@@ -117,7 +115,8 @@ class ImageService {
   /// [quality] JPEG 质量 (1-100，默认 85)
   ///
   /// 返回：(压缩后的字节，压缩后宽度，压缩后高度，原始宽度，原始高度，是否压缩)
-  Future<(Uint8List, double, double, double, double, bool)> compressImageIfNeeded(
+  Future<(Uint8List, double, double, double, double, bool)>
+      compressImageIfNeeded(
     Uint8List bytes, {
     int maxDimension = 2048,
     int quality = 85,
@@ -136,7 +135,14 @@ class ImageService {
       final maxSide = image.width > image.height ? image.width : image.height;
       if (maxSide <= maxDimension) {
         // 不需要压缩
-        return (bytes, originalWidth, originalHeight, originalWidth, originalHeight, false);
+        return (
+          bytes,
+          originalWidth,
+          originalHeight,
+          originalWidth,
+          originalHeight,
+          false
+        );
       }
 
       // 计算缩放比例
@@ -156,11 +162,11 @@ class ImageService {
 
       return (
         Uint8List.fromList(compressed),
-        newWidth.toDouble(),  // 压缩后宽度
+        newWidth.toDouble(), // 压缩后宽度
         newHeight.toDouble(), // 压缩后高度
-        originalWidth,        // 原始宽度
-        originalHeight,       // 原始高度
-        true,                 // 标记已压缩
+        originalWidth, // 原始宽度
+        originalHeight, // 原始高度
+        true, // 标记已压缩
       );
     } catch (e) {
       if (e is ImageException) rethrow;
@@ -187,8 +193,14 @@ class ImageService {
     final bytes = await readImageBytesFromXFile(xFile);
 
     // 压缩处理
-    final (compressedBytes, procWidth, procHeight, origWidth, origHeight, wasCompressed) =
-        await compressImageIfNeeded(bytes);
+    final (
+      compressedBytes,
+      procWidth,
+      procHeight,
+      origWidth,
+      origHeight,
+      wasCompressed
+    ) = await compressImageIfNeeded(bytes);
 
     // 获取 MIME 类型
     final mimeType = getMimeTypeFromXFile(xFile);
@@ -253,9 +265,9 @@ class LoadedImageData {
 /// 图片相关异常
 class ImageException implements Exception {
   final String message;
-  
+
   ImageException(this.message);
-  
+
   @override
   String toString() => 'ImageException: $message';
 }

@@ -61,9 +61,8 @@ class BoundingBoxPainter extends CustomPainter {
     final matrix = transformationController?.value;
 
     // 如果有变换，应用变换到图片区域
-    final finalImageRect = (matrix != null)
-        ? _applyTransform(imageRect, matrix)
-        : imageRect;
+    final finalImageRect =
+        (matrix != null) ? _applyTransform(imageRect, matrix) : imageRect;
 
     // 为每个边界框绘制
     for (int i = 0; i < boxes.length; i++) {
@@ -98,13 +97,18 @@ class BoundingBoxPainter extends CustomPainter {
     final topLeft = _transformPoint(Offset(rect.left, rect.top), matrix);
     final topRight = _transformPoint(Offset(rect.right, rect.top), matrix);
     final bottomLeft = _transformPoint(Offset(rect.left, rect.bottom), matrix);
-    final bottomRight = _transformPoint(Offset(rect.right, rect.bottom), matrix);
+    final bottomRight =
+        _transformPoint(Offset(rect.right, rect.bottom), matrix);
 
     // 创建外接矩形 - 使用所有四个点计算最小/最大值
-    final minX = [topLeft.dx, topRight.dx, bottomLeft.dx, bottomRight.dx].reduce((a, b) => a < b ? a : b);
-    final maxX = [topLeft.dx, topRight.dx, bottomLeft.dx, bottomRight.dx].reduce((a, b) => a > b ? a : b);
-    final minY = [topLeft.dy, topRight.dy, bottomLeft.dy, bottomRight.dy].reduce((a, b) => a < b ? a : b);
-    final maxY = [topLeft.dy, topRight.dy, bottomLeft.dy, bottomRight.dy].reduce((a, b) => a > b ? a : b);
+    final minX = [topLeft.dx, topRight.dx, bottomLeft.dx, bottomRight.dx]
+        .reduce((a, b) => a < b ? a : b);
+    final maxX = [topLeft.dx, topRight.dx, bottomLeft.dx, bottomRight.dx]
+        .reduce((a, b) => a > b ? a : b);
+    final minY = [topLeft.dy, topRight.dy, bottomLeft.dy, bottomRight.dy]
+        .reduce((a, b) => a < b ? a : b);
+    final maxY = [topLeft.dy, topRight.dy, bottomLeft.dy, bottomRight.dy]
+        .reduce((a, b) => a > b ? a : b);
 
     return Rect.fromLTWH(minX, minY, maxX - minX, maxY - minY);
   }
@@ -115,8 +119,10 @@ class BoundingBoxPainter extends CustomPainter {
     final y = point.dy;
 
     // Matrix4 变换：x' = m[0]*x + m[4]*y + m[12]*z + m[3]
-    final transformedX = matrix.storage[0] * x + matrix.storage[4] * y + matrix.storage[12];
-    final transformedY = matrix.storage[1] * x + matrix.storage[5] * y + matrix.storage[13];
+    final transformedX =
+        matrix.storage[0] * x + matrix.storage[4] * y + matrix.storage[12];
+    final transformedY =
+        matrix.storage[1] * x + matrix.storage[5] * y + matrix.storage[13];
 
     return Offset(transformedX, transformedY);
   }
@@ -250,7 +256,7 @@ class BoundingBoxPainter extends CustomPainter {
     textPainter.layout();
 
     // 计算背景矩形 (标签位于框的上方)
-    final padding = const EdgeInsets.symmetric(horizontal: 6, vertical: 3);
+    const padding = EdgeInsets.symmetric(horizontal: 6, vertical: 3);
     final bgRect = Rect.fromLTWH(
       rect.left,
       rect.top - textPainter.height - padding.vertical,
@@ -293,9 +299,9 @@ class BoundingBoxPainter extends CustomPainter {
     textPainter.layout();
 
     // 计算文本位置 (在背景矩形内)
-    final padding = const EdgeInsets.symmetric(horizontal: 6, vertical: 3);
+    const padding = EdgeInsets.symmetric(horizontal: 6, vertical: 3);
     double textY = rect.top - textPainter.height - padding.top / 2;
-    
+
     // 如果标签超出顶部，绘制在框内顶部
     if (textY < 0) {
       textY = rect.top + padding.top / 2;
@@ -321,6 +327,7 @@ class BoundingBoxPainter extends CustomPainter {
   /// [imageDisplayRect] 图片显示区域
   ///
   /// 返回：命中的边界框索引，未命中返回 null
+  @override
   bool hitTest(Offset localPosition) {
     // 简化处理：这里不进行实际命中测试
     // 实际命中测试由 ImageCanvas 处理
