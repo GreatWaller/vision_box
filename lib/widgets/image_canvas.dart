@@ -4,7 +4,7 @@ import '../models/bounding_box.dart';
 import 'bounding_box_painter.dart';
 
 /// 图片画布组件 - 组合 InteractiveViewer、图片和边界框绘制
-/// 
+///
 /// 提供：
 /// 1. 图片的双指缩放、拖拽查看
 /// 2. 边界框的完美跟随 (关键功能)
@@ -12,16 +12,16 @@ import 'bounding_box_painter.dart';
 class ImageCanvas extends StatefulWidget {
   /// 图片字节数据
   final Uint8List imageBytes;
-  
+
   /// 原始图片宽度
   final double originalWidth;
-  
+
   /// 原始图片高度
   final double originalHeight;
-  
+
   /// 边界框列表
   final List<BoundingBox> boxes;
-  
+
   /// 边界框点击回调
   final Function(BoundingBox box)? onBoxTap;
 
@@ -49,7 +49,7 @@ class _ImageCanvasState extends State<ImageCanvas> {
   void initState() {
     super.initState();
     _transformationController = TransformationController();
-    
+
     // 监听变换变化，触发重绘
     _transformationController.addListener(_onTransformChanged);
   }
@@ -97,8 +97,10 @@ class _ImageCanvasState extends State<ImageCanvas> {
     }
 
     // 将点击位置转换为归一化坐标（相对于图片显示区域）
-    final normX = (localPosition.dx - imageDisplayRect.left) / imageDisplayRect.width;
-    final normY = (localPosition.dy - imageDisplayRect.top) / imageDisplayRect.height;
+    final normX =
+        (localPosition.dx - imageDisplayRect.left) / imageDisplayRect.width;
+    final normY =
+        (localPosition.dy - imageDisplayRect.top) / imageDisplayRect.height;
 
     // 检测命中
     int? hitIndex;
@@ -175,38 +177,41 @@ class _ImageCanvasState extends State<ImageCanvas> {
             transformationController: _transformationController,
             minScale: 0.1,
             maxScale: 10.0,
-            boundaryMargin: const EdgeInsets.all(100),
+            boundaryMargin: EdgeInsets.zero,
+            panEnabled: true,
+            scaleEnabled: true,
             child: SizedBox(
               width: canvasSize.width,
               height: canvasSize.height,
               child: Stack(
                 children: [
-                  // 底层：图片显示
-                  Image.memory(
-                    widget.imageBytes,
-                    fit: BoxFit.contain,
-                    width: widget.originalWidth,
-                    height: widget.originalHeight,
-                    gaplessPlayback: true,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.broken_image,
-                              size: 64,
-                              color: Colors.grey.shade400,
+                  // 底层：图片显示 - 使用 Center + 固定尺寸
+                  Center(
+                    child: SizedBox(
+                      width: imageDisplayRect.width,
+                      height: imageDisplayRect.height,
+                      child: Image.memory(
+                        widget.imageBytes,
+                        fit: BoxFit.fill,
+                        gaplessPlayback: true,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.broken_image,
+                                  size: 64,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 16),
+                                Text('图片加载失败'),
+                              ],
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              '图片加载失败',
-                              style: TextStyle(color: Colors.grey.shade600),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                          );
+                        },
+                      ),
+                    ),
                   ),
 
                   // 顶层：边界框绘制 - 使用图片的实际显示区域
@@ -217,10 +222,12 @@ class _ImageCanvasState extends State<ImageCanvas> {
                       width: imageDisplayRect.width,
                       height: imageDisplayRect.height,
                       child: CustomPaint(
-                        size: Size(imageDisplayRect.width, imageDisplayRect.height),
+                        size: Size(
+                            imageDisplayRect.width, imageDisplayRect.height),
                         painter: BoundingBoxPainter(
                           boxes: widget.boxes,
-                          canvasSize: Size(imageDisplayRect.width, imageDisplayRect.height),
+                          canvasSize: Size(
+                              imageDisplayRect.width, imageDisplayRect.height),
                           selectedIndex: _selectedIndex,
                           onBoxTap: (index) {
                             setState(() {

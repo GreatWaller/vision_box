@@ -70,6 +70,8 @@ class BoundingBoxPainter extends CustomPainter {
     final isSelected = index == selectedIndex;
 
     // 绘制边框
+    // debugPrint(
+    // 'Drawing box $index: canvasSize=$canvasSize, screenRect=$screenRect');
     _drawBoxBorder(canvas, screenRect, isSelected);
 
     // 绘制标签背景
